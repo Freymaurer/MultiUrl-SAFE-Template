@@ -15,7 +15,7 @@ open Suave.Logging
 open Fable.Remoting.Server
 open Fable.Remoting.Suave
 open System.Data.SqlTypes
-//open System.Data.SqlClient
+open System.Data.SqlClient
 
 //let connectionString =
 //   seq {
