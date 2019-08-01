@@ -6,6 +6,7 @@ group Server
     nuget FSharp.Core
     nuget Suave
     nuget Fable.Remoting.Suave ~> 3
+    nuget System.Data.SqlClient
 
 group Client
     source https://api.nuget.org/v3/index.json
