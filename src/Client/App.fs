@@ -3,24 +3,31 @@ open Elmish
 open Elmish.UrlParser
 open Elmish.Navigation
 
-type Page =
-    | Home
-    | About
+module Pages =
 
-let toPage = function
-    | Home -> "#/home"
-    | About -> "#/about"
+    type Page =
+        | Home
+        | Counter
+    
+    let toPage page =
+        match page with
+        | Home -> "#/home"
+        | Counter -> "#/counter"
+    
+    let pageParser : Parser<Page->Page,Page> =
+        oneOf [
+            map Home (s "/")
+            map Home (s "home")
+            map Counter (s "counter")
+        ]
+
+    //let urlParser location = parsePath pageParser location
+
+open Pages
 
 type Model = {
     currentPage : Page
 }
-
-let pageParser : Parser<Page->Page,Page> =
-    oneOf [
-        map Home (s "/")
-        map Home (s "home")
-        map About (s "about")
-    ]
     
 let urlUpdate (result: Option<Page>) model =
     match result with
@@ -40,16 +47,17 @@ open Fable.React
 open Fable.React.Props
 
 let view model _ =
-    let pageHtml = function
+    let pageHtml page =
+        match page with
         | Page.Home -> str "Home page"
-        | Page.About -> str "About page"
+        | Page.Counter -> str "Counter page"
     div [] [
         ul [] [
             li [] [
                 a [ Href "#/home" ] [ str "Home" ]
             ]
             li [] [
-                a [ Href "#/about" ] [ str "About" ]
+                a [ Href "#/counter" ] [ str "Counter" ]
             ]
         ]
         div [] [
