@@ -1,4 +1,5 @@
 module Client.App
+
 open Elmish
 open Elmish.UrlParser
 open Elmish.Navigation
@@ -21,20 +22,26 @@ module Pages =
             map Counter (s "counter")
         ]
 
-    //let urlParser location = parsePath pageParser location
 
 open Pages
+
+type PageModel =
+| HomeModel
+| CounterModel
 
 type Model = {
     currentPage : Page
 }
     
-let urlUpdate (result: Option<Page>) model =
+let urlUpdate (result: Page option) model =
     match result with
     | None ->
         model, Navigation.modifyUrl (toPage model.currentPage)
-    | Some page ->
-        { model with currentPage = page }, Cmd.none
+    | Some Page.Home ->
+        { model with currentPage = Page.Home }, Cmd.none
+    | Some Page.Counter ->
+        //let m, cmd = Counter.init ()
+        { model with currentPage = Page.Counter }, Cmd.none
 
 let init result =
     let (model, cmd) = urlUpdate result { currentPage = Page.Home }
