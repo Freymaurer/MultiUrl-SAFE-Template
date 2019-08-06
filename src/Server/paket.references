@@ -1,5 +1,5 @@
+nuget Fable.Elmish.Browser
 group Server
     FSharp.Core
     Suave
     Fable.Remoting.Suave
-    System.Data.SqlClient

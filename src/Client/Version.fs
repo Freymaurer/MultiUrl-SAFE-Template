@@ -1,4 +1,4 @@
-﻿module Version
+module Client.Version
 
 let template = "1.14.0"
 

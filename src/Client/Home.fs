@@ -1,4 +1,4 @@
-module Client
+module Client.Home
 
 open Elmish
 open Elmish.React
@@ -13,9 +13,7 @@ open Shared
 // in this case, we are keeping track of a counter
 // we mark it as optional, because initially it will not be available from the client
 // the initial value will be requested from server
-type Model = {
-    Counter: Counter option
-    }
+type Model = { Counter: Counter option }
 
 // The Msg type defines what events/actions can occur while the application is running
 // the state of the application changes *only* in reaction to these events
@@ -113,18 +111,3 @@ let view (model : Model) (dispatch : Msg -> unit) =
           Footer.footer [ ]
                 [ Content.content [ Content.Modifiers [ Modifier.TextAlignment (Screen.All, TextAlignment.Centered) ] ]
                     [ safeComponents ] ] ]
-
-#if DEBUG
-open Elmish.Debug
-open Elmish.HMR
-#endif
-
-Program.mkProgram init update view
-#if DEBUG
-|> Program.withConsoleTrace
-#endif
-|> Program.withReactBatched "elmish-app"
-#if DEBUG
-|> Program.withDebugger
-#endif
-|> Program.run
