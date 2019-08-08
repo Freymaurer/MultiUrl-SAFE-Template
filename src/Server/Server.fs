@@ -1,4 +1,4 @@
-﻿open System.IO
+open System.IO
 open System
 open System.Reflection
 open System.Net
@@ -45,6 +45,7 @@ let webApi =
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.fromValue counterApi
     |> Remoting.buildWebPart
+
 let webApp =
     choose [
         webApi

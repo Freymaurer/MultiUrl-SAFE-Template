@@ -1,4 +1,4 @@
-nuget Fable.Elmish.Browser
+Fable.Elmish.Browser
 group Client
     FSharp.Core
     Fable.Core

@@ -9,6 +9,7 @@
         <None Include="paket.references" />
         <Compile Include="..\Shared\Shared.fs" />
         <Compile Include="Version.fs" />
+        <Compile Include="Home.fs" />
         <Compile Include="Counter.fs" />
         <Compile Include="App.fs" />
     </ItemGroup>

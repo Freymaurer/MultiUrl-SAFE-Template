@@ -6,8 +6,8 @@ open Fable.React
 open Fable.React.Props
 open Fulma
 open Thoth.Json
-
 open Shared
+
 
 // The model holds data that you want to keep track of while the application is running
 // in this case, we are keeping track of a counter
@@ -26,7 +26,6 @@ type Msg =
 
 module Server =
 
-    open Shared
     open Fable.Remoting.Client
 
     /// A proxy you can use to talk to server directly

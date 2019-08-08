@@ -18,7 +18,7 @@ NUGET
       FSharp.Core (>= 4.5.2) - restriction: >= netstandard2.0
     Fable.Core (3.0) - restriction: >= netstandard2.0
       FSharp.Core (>= 4.5.2) - restriction: >= netstandard2.0
-    Fable.Elmish (3.0.4) - restriction: >= netstandard2.0
+    Fable.Elmish (3.0.5) - restriction: >= netstandard2.0
       Fable.Core (>= 3.0) - restriction: >= netstandard2.0
       FSharp.Core (>= 4.6.2) - restriction: >= netstandard2.0
     Fable.Elmish.Browser (3.0.1)
@@ -759,7 +759,7 @@ NUGET
       FSharp.Core (>= 4.5.2)
     Fable.Core (3.0)
       FSharp.Core (>= 4.5.2)
-    Fable.Elmish (3.0.4)
+    Fable.Elmish (3.0.5)
       Fable.Core (>= 3.0)
       FSharp.Core (>= 4.6.2)
     Fable.Elmish.Browser (3.0.1)
