@@ -118,10 +118,13 @@ let view model (dispatch: Msg -> unit) =
                     [ str "Test Application" ]
                   Heading.h2 [ Heading.IsSubtitle ]
                     [ str "using Elmish Navigation" ]
-                  Text.p
-                    [   Modifiers [ Modifier.TextSize (Screen.All,TextSize.Is4)
-                                    Modifier.TextColor IsDanger] ]
-                    [   pageHtml model.PageModel
+                  Box.box'
+                    []
+                    [ Text.p
+                        [   Modifiers [ Modifier.TextSize (Screen.All,TextSize.Is4)
+                                        Modifier.TextColor IsDanger] ]
+                        [   pageHtml model.PageModel
+                        ]
                     ]
                   Box.box'
                     [ ]
