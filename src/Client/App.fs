@@ -28,11 +28,11 @@ open Pages
 
 type PageModel =
 | HomeModel
-| CounterModel (*of Counter.Model*)
+| CounterModel of Counter.Model
 
 type Msg =
 | HomeMsg
-| CounterMsg(* of Counter.Msg*)
+| CounterMsg of Counter.Msg
 
 type Model = {
     PageModel   : PageModel
@@ -44,12 +44,13 @@ let urlUpdate (result: Page option) (model:Model) =
         model, Navigation.modifyUrl (*(toPage Page.Home)*) (toPage Page.Home)
     | Some Page.Home ->
         { model with PageModel = PageModel.HomeModel }, Cmd.none
-    //| Some Page.Counter ->
-    //    let m, cmd = Counter.init ()
-    //    { model with PageModel = PageModel.CounterModel m }, Cmd.map CounterMsg cmd
+    // TOREMOVE FOR WORKING
     | Some Page.Counter ->
-        //let m, cmd = Counter.init ()
-        { model with PageModel = PageModel.CounterModel }, Cmd.none
+        let m, cmd = Counter.init ()
+        { model with PageModel = PageModel.CounterModel m }, Cmd.map CounterMsg cmd
+    //| Some Page.Counter ->
+    //    //let m, cmd = Counter.init ()
+    //    { model with PageModel = PageModel.CounterModel }, Cmd.none
 
 let hydrateModel (json:string) (page: Page option) : Model * Cmd<_> =
     // The page was rendered server-side and now react client-side kicks in.
@@ -86,11 +87,11 @@ let update msg currentModel =
         { currentModel with PageModel = HomeModel}, Cmd.none
 
     // TOREMOVE FOR WORKING
-    //| CounterMsg msg, CounterModel m ->
-    //    let m, cmd =
-    //        Counter.update msg m
-    //    { currentModel with
-    //        PageModel = CounterModel m }, Cmd.map CounterMsg cmd
+    | CounterMsg msg, CounterModel m ->
+        let m, cmd =
+            Counter.update msg m
+        { currentModel with
+            PageModel = CounterModel m }, Cmd.map CounterMsg cmd
     | _ -> currentModel,Cmd.none
 
 //let update _ model =
@@ -141,10 +142,10 @@ let view model (dispatch: Msg -> unit) =
                       | HomeModel -> 
                         yield Home.view ()
                       // TOREMOVE FOR WORKING
-                      //| CounterModel m ->
-                      //  yield Counter.view { Model = m; Dispatch = (CounterMsg >> dispatch) }
-                      | _ ->
-                          yield str "this does not exist yet"
+                      | CounterModel m ->
+                        yield Counter.view { Model = m; Dispatch = (CounterMsg >> dispatch) }
+                      //| _ ->
+                      //    yield str "this does not exist yet"
                   ]  
                 ]
             ]
