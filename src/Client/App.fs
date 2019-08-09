@@ -28,28 +28,30 @@ open Pages
 
 type PageModel =
 | HomeModel
-| CounterModel (*of Counter.Model*)
+| CounterModel of Counter.Model
 
 type Msg =
 | HomeMsg
-| CounterMsg(* of Counter.Msg*)
+| CounterMsg of Counter.Msg
 
 type Model = {
     PageModel   : PageModel
+    Page        : Page
 }
 
 let urlUpdate (result: Page option) (model:Model) =
     match result with
     | None ->
-        model, Navigation.modifyUrl (*(toPage Page.Home)*) (toPage Page.Home)
+        model, Navigation.modifyUrl (toPage Page.Home)
     | Some Page.Home ->
-        { model with PageModel = PageModel.HomeModel }, Cmd.none
-    //| Some Page.Counter ->
-    //    let m, cmd = Counter.init ()
-    //    { model with PageModel = PageModel.CounterModel m }, Cmd.map CounterMsg cmd
+        { model with
+            PageModel = PageModel.HomeModel
+            Page = Home }, Cmd.none
     | Some Page.Counter ->
-        //let m, cmd = Counter.init ()
-        { model with PageModel = PageModel.CounterModel }, Cmd.none
+        let m, cmd = Counter.init ()
+        { model with
+            PageModel = PageModel.CounterModel m
+            Page = Counter}, Cmd.map CounterMsg cmd
 
 let hydrateModel (json:string) (page: Page option) : Model * Cmd<_> =
     // The page was rendered server-side and now react client-side kicks in.
@@ -61,7 +63,8 @@ let hydrateModel (json:string) (page: Page option) : Model * Cmd<_> =
     | Some Page.Counter, CounterModel _ -> model, Cmd.none
     | _, HomeModel |  _, CounterModel _ ->
         // unknown page or page does not match model -> go to home page
-        { PageModel = HomeModel }, Cmd.none
+        { PageModel = HomeModel
+          Page  =   Home }, Cmd.none
 
 
 let init page =
@@ -76,29 +79,62 @@ let init page =
     | None ->
         // no SSR -> show home page
         let model =
-            { PageModel = HomeModel }
+            { PageModel = HomeModel
+              Page      = Home}
 
         urlUpdate page model
 
 let update msg currentModel =
     match msg, currentModel.PageModel with
     | HomeMsg, HomeModel ->
-        { currentModel with PageModel = HomeModel}, Cmd.none
+        let nextModel = {
+            currentModel with
+                PageModel = HomeModel
+                Page = Home
+            }
+        nextModel, Cmd.none
 
     // TOREMOVE FOR WORKING
-    //| CounterMsg msg, CounterModel m ->
-    //    let m, cmd =
-    //        Counter.update msg m
-    //    { currentModel with
-    //        PageModel = CounterModel m }, Cmd.map CounterMsg cmd
+    | CounterMsg msg, CounterModel m ->
+        let m, cmd =
+            Counter.update msg m
+        let nextModel = {
+            currentModel with
+                PageModel = CounterModel m
+                Page = Counter
+            }
+        nextModel, Cmd.map CounterMsg cmd
     | _ -> currentModel,Cmd.none
-
-//let update _ model =
-//    model, Cmd.none
 
 open Fable.React
 open Fable.React.Props
 open Fulma
+
+
+let safeComponents =
+    let components =
+        span [ ]
+           [ a [ Href "https://github.com/SAFE-Stack/SAFE-template" ]
+               [ str "SAFE  "
+                 str Version.template ]
+             str ", "
+             a [ Href "http://suave.io" ] [ str "Suave" ]
+             str ", "
+             a [ Href "http://fable.io" ] [ str "Fable" ]
+             str ", "
+             a [ Href "https://elmish.github.io" ] [ str "Elmish" ]
+             str ", "
+             a [ Href "https://fulma.github.io/Fulma" ] [ str "Fulma" ]
+             str ", "
+             a [ Href "https://zaid-ajaj.github.io/Fable.Remoting/" ] [ str "Fable.Remoting" ]
+
+           ]
+
+    span [ ]
+        [ str "Version "
+          strong [ ] [ str Version.app ]
+          str " powered by: "
+          components ]
 
 let view model (dispatch: Msg -> unit) =
     let pageHtml pageModel =
@@ -108,8 +144,17 @@ let view model (dispatch: Msg -> unit) =
     Hero.hero
         [ Hero.IsHalfHeight
         ]
-        [ Hero.head [ ]
-           [ ]
+        [ Hero.head
+            [ ]
+            [ Tabs.tabs
+                [ Tabs.IsBoxed
+                  Tabs.IsCentered ]
+                [ Tabs.tab [ (if model.Page = Home then Tabs.Tab.IsActive true else Tabs.Tab.IsActive false) ]
+                    [ a [ Href "#/home" ] [ str "Home" ] ]
+                  Tabs.tab [ (if model.Page = Counter then Tabs.Tab.IsActive true else Tabs.Tab.IsActive false) ]
+                    [ a [ Href "#/counter" ] [ str "Counter" ] ]
+                ]
+            ]
           Hero.body [ ]
             [ Container.container
                 [ Container.IsFluid
@@ -126,28 +171,20 @@ let view model (dispatch: Msg -> unit) =
                         [   pageHtml model.PageModel
                         ]
                     ]
-                  Box.box'
-                    [ ]
-                    [
-                      div [] [
-                          a [ Href "#/home" ] [ str "Home" ]
-                      ]
-                      div [] [
-                          a [ Href "#/counter" ] [ str "Counter" ]
-                      ]
-                    ]
                   Box.box' [ ] [
                       match model.PageModel with
                       | HomeModel -> 
                         yield Home.view ()
-                      // TOREMOVE FOR WORKING
-                      //| CounterModel m ->
-                      //  yield Counter.view { Model = m; Dispatch = (CounterMsg >> dispatch) }
-                      | _ ->
-                          yield str "this does not exist yet"
+                      | CounterModel m ->
+                        yield Counter.view { Model = m; Dispatch = (CounterMsg >> dispatch) }
+                      //| _ ->
+                      //    yield str "this does not exist yet"
                   ]  
                 ]
             ]
+          Hero.foot []
+            [ Content.content [ Content.Modifiers [ Modifier.TextAlignment (Screen.All, TextAlignment.Centered) ] ]
+                [ safeComponents ] ] 
         ]
 
 

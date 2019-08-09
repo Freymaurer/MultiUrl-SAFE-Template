@@ -63,30 +63,7 @@ type Props = {
     Dispatch: Msg -> unit
 }
 
-let safeComponents =
-    let components =
-        span [ ]
-           [ a [ Href "https://github.com/SAFE-Stack/SAFE-template" ]
-               [ str "SAFE  "
-                 str Version.template ]
-             str ", "
-             a [ Href "http://suave.io" ] [ str "Suave" ]
-             str ", "
-             a [ Href "http://fable.io" ] [ str "Fable" ]
-             str ", "
-             a [ Href "https://elmish.github.io" ] [ str "Elmish" ]
-             str ", "
-             a [ Href "https://fulma.github.io/Fulma" ] [ str "Fulma" ]
-             str ", "
-             a [ Href "https://zaid-ajaj.github.io/Fable.Remoting/" ] [ str "Fable.Remoting" ]
 
-           ]
-
-    span [ ]
-        [ str "Version "
-          strong [ ] [ str Version.app ]
-          str " powered by: "
-          components ]
 
 let show = function
 | { Counter = Some counter } -> string counter.Value
@@ -115,6 +92,4 @@ let view = elmishView "Counter" <| fun { Model = model; Dispatch = dispatch } ->
                     [ Column.column [] [ button "-" (fun _ -> dispatch Decrement) ]
                       Column.column [] [ button "+" (fun _ -> dispatch Increment) ] ] ]
 
-          Footer.footer [ ]
-                [ Content.content [ Content.Modifiers [ Modifier.TextAlignment (Screen.All, TextAlignment.Centered) ] ]
-                    [ safeComponents ] ] ]
+        ]
