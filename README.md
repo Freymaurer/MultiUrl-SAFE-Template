@@ -2,6 +2,16 @@
 
 This template can be used to generate a full-stack web application using the [SAFE Stack](https://safe-stack.github.io/). It was created using the dotnet [SAFE Template](https://safe-stack.github.io/docs/template-overview/). If you want to learn more about the template why not start with the [quick start](https://safe-stack.github.io/docs/quickstart/) guide?
 
+Edit: I had to update package.json, otherwise the following function would give no output
+
+    let inline elmishView name render = FunctionComponent.Of(render, name, equalsButFunctions)
+    
+Changes to package.json:
+
+    "react": "16.8",
+    "react-dom": "16.8",
+
+
 ## Install pre-requisites
 
 You'll need to install the following pre-requisites in order to build SAFE applications
