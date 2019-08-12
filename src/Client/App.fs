@@ -93,8 +93,6 @@ let update msg currentModel =
                 Page = Home
             }
         nextModel, Cmd.none
-
-    // TOREMOVE FOR WORKING
     | CounterMsg msg, CounterModel m ->
         let m, cmd =
             Counter.update msg m

@@ -7,11 +7,8 @@ open Shared
 
 open Suave
 open Suave.Files
-open Suave.Successful
 open Suave.Filters
 open Suave.Operators
-
-
 
 open Fable.Remoting.Server
 open Fable.Remoting.Suave

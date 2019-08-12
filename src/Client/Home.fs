@@ -1,13 +1,8 @@
 module Client.Home
 
-open Elmish
-open Elmish.React
-open Fable.React
-open Fable.React.Props
-open Fulma
-open Thoth.Json
 
-open Shared
+open Fable.React
+
 
 let view() =
     div
