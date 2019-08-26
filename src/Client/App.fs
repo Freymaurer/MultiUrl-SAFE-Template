@@ -33,6 +33,7 @@ type PageModel =
 type Model = {
     CurrentRoute : Route option
     CurrentPageModel : PageModel
+    Debug : string option
 }
 
 type Msg =
@@ -70,6 +71,14 @@ let urlUpdate (route: Route option) (model:Model) =
         { model with
             CurrentPageModel = PageModel.CounterModel m
             CurrentRoute = route }, Cmd.map CounterMsg cmd
+    | Some (Route.Detail (id) )->
+        let nextModel = {
+            model with
+                //Debug = Some (sprintf "You are now visiting page Detail: %i" id)
+                CurrentPageModel = HomeModel
+                CurrentRoute = Some (Route.Detail id)
+        }
+        nextModel, Cmd.none
     | _ ->
         { model with CurrentRoute = route }, Cmd.none
 
@@ -77,6 +86,7 @@ let init _ =
     let model ={
         CurrentRoute = None
         CurrentPageModel = HomeModel
+        Debug = None
     }
     let route = Routing.parsePath Browser.Dom.document.location
     urlUpdate route model
@@ -111,6 +121,7 @@ let heroHeadNavbar dispatch =
         a [Href "#"; OnClick (fun ev -> ev.preventDefault(); Msg.Navigate Route.Dashboard |> dispatch)] [str "Dashboard"]
         a [Href "#"; OnClick (fun ev -> ev.preventDefault(); Msg.Navigate Route.Home |> dispatch)] [str "Home"]
         a [Href "#"; OnClick (fun ev -> ev.preventDefault(); Msg.Navigate Route.Counter |> dispatch)] [str "Counter"]
+        a [Href "#"; OnClick (fun ev -> ev.preventDefault(); Msg.Navigate (Route.Detail 4) |> dispatch)] [str "Detail 4"]
         ]
     ]
 
@@ -142,16 +153,20 @@ let view (model:Model) (dispatch: Msg -> unit) =
     Hero.hero
         [ Hero.IsHalfHeight ]
         [ (heroHeadNavbar dispatch)
+          //str model.Debug.Value
           Box.box' [ ] [
-              match model.CurrentPageModel with
-              | HomeModel -> 
-                yield Home.view ()
-              | CounterModel m ->
-                yield Counter.view { Model = m; Dispatch = (CounterMsg >> dispatch) }
+              match model.CurrentPageModel, model.CurrentRoute with
+              | _, Some (Route.Detail id) ->
+                    yield str (sprintf "you just matched the Detail Route with id: %i" id)
+              | HomeModel, Some (Dashboard) ->
+                    yield str "you just matched the Dashboard Route"
+              | HomeModel, _ -> 
+                    yield Home.view ()
+              | CounterModel m ,_->
+                    yield Counter.view { Model = m; Dispatch = (CounterMsg >> dispatch) }
               | _ ->
-                  yield str "this does not exist yet"
+                    yield str "this does not exist yet"
           ]  
-
           Hero.foot []
             [ Content.content [ Content.Modifiers [ Modifier.TextAlignment (Screen.All, TextAlignment.Centered) ] ]
                 [ safeComponents ]
