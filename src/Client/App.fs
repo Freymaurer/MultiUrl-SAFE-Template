@@ -34,12 +34,14 @@ type Model = {
     CurrentRoute : Route option
     CurrentPageModel : PageModel
     Debug : string option
+    NumberForDetail : int
 }
 
 type Msg =
     | Navigate of Route
     | HomeMsg
     | CounterMsg of Counter.Msg
+    | UpdateNumberForDetail of int
 
 module Routing =
 
@@ -74,8 +76,7 @@ let urlUpdate (route: Route option) (model:Model) =
     | Some (Route.Detail (id) )->
         let nextModel = {
             model with
-                //Debug = Some (sprintf "You are now visiting page Detail: %i" id)
-                CurrentPageModel = HomeModel
+                Debug = Some (sprintf "You are now visiting page Detail: %i" id)
                 CurrentRoute = Some (Route.Detail id)
         }
         nextModel, Cmd.none
@@ -83,10 +84,11 @@ let urlUpdate (route: Route option) (model:Model) =
         { model with CurrentRoute = route }, Cmd.none
 
 let init _ =
-    let model ={
+    let model = {
         CurrentRoute = None
         CurrentPageModel = HomeModel
         Debug = None
+        NumberForDetail = 0
     }
     let route = Routing.parsePath Browser.Dom.document.location
     urlUpdate route model
@@ -111,17 +113,23 @@ let update msg (currentModel:Model) =
                 CurrentRoute = Some Counter
             }
         nextModel, Cmd.map CounterMsg cmd
+    | UpdateNumberForDetail (inputVal), _ ->
+        let nextModel = {
+            currentModel with
+                NumberForDetail = inputVal
+        }
+        nextModel,Cmd.none
     | _ -> currentModel,Cmd.none
 
 
-let heroHeadNavbar dispatch =
+let heroHeadNavbar dispatch (model:Model)=
     Hero.head [] [
         Tabs.tabs [ Tabs.IsBoxed; Tabs.IsCentered ] [
         a [Href "#"; OnClick (fun ev -> ev.preventDefault(); Msg.Navigate Route.Root |> dispatch)] [str "Root"]
         a [Href "#"; OnClick (fun ev -> ev.preventDefault(); Msg.Navigate Route.Dashboard |> dispatch)] [str "Dashboard"]
         a [Href "#"; OnClick (fun ev -> ev.preventDefault(); Msg.Navigate Route.Home |> dispatch)] [str "Home"]
         a [Href "#"; OnClick (fun ev -> ev.preventDefault(); Msg.Navigate Route.Counter |> dispatch)] [str "Counter"]
-        a [Href "#"; OnClick (fun ev -> ev.preventDefault(); Msg.Navigate (Route.Detail 4) |> dispatch)] [str "Detail 4"]
+        a [Href "#"; OnClick (fun ev -> ev.preventDefault(); Msg.Navigate (Route.Detail model.NumberForDetail) |> dispatch)] [str (sprintf "Detail %i" model.NumberForDetail)]
         ]
     ]
 
@@ -150,28 +158,39 @@ let safeComponents =
           components ]
 
 let view (model:Model) (dispatch: Msg -> unit) =
-    Hero.hero
-        [ Hero.IsHalfHeight ]
-        [ (heroHeadNavbar dispatch)
-          //str model.Debug.Value
-          Box.box' [ ] [
-              match model.CurrentPageModel, model.CurrentRoute with
-              | _, Some (Route.Detail id) ->
-                    yield str (sprintf "you just matched the Detail Route with id: %i" id)
-              | HomeModel, Some (Dashboard) ->
-                    yield str "you just matched the Dashboard Route"
-              | HomeModel, _ -> 
-                    yield Home.view ()
-              | CounterModel m ,_->
-                    yield Counter.view { Model = m; Dispatch = (CounterMsg >> dispatch) }
-              | _ ->
-                    yield str "this does not exist yet"
-          ]  
-          Hero.foot []
-            [ Content.content [ Content.Modifiers [ Modifier.TextAlignment (Screen.All, TextAlignment.Centered) ] ]
-                [ safeComponents ]
-          ] 
+    Hero.hero [ Hero.IsHalfHeight ] [
+        (heroHeadNavbar dispatch model)
+        //str model.Debug.Value
+        Columns.columns [ Columns.IsCentered ][
+            Column.column [ Column.Width (Screen.All,Column.Is2) ] [
+              Input.number [ Input.Placeholder "Detail Number..."
+                             Input.OnChange (fun e -> let x = !!e.target?value
+                                                      dispatch (UpdateNumberForDetail x)
+                                            )
+                           ]
+            ]
         ]
+        Columns.columns [ Columns.IsCentered ] [
+            Column.column [ Column.Width (Screen.All,Column.IsHalf) ] [
+                Box.box' [ ] [
+                    match model.CurrentPageModel, model.CurrentRoute with
+                    | _, Some (Route.Detail id) ->
+                            yield str (sprintf "you just matched the Detail Route with id: %i" id)
+                    | HomeModel, Some (Dashboard) ->
+                            yield str "you just matched the Dashboard Route"
+                    | HomeModel, _ -> 
+                            yield Home.view ()
+                    | CounterModel m ,Some Route.Counter->
+                            yield Counter.view { Model = m; Dispatch = (CounterMsg >> dispatch) }
+                    | _ ->
+                            yield str "this does not exist yet"
+                ]  
+            ]
+        ]
+        Hero.foot [] [ Content.content [ Content.Modifiers [ Modifier.TextAlignment (Screen.All, TextAlignment.Centered) ] ]
+            [ safeComponents ]
+        ] 
+    ]
 
 
 open Elmish.React

@@ -93,5 +93,4 @@ let view = elmishView "Counter" <| fun { Model = model; Dispatch = dispatch } ->
                       Column.column [] [ button "+" (fun _ -> dispatch Increment) ] ]
                 strong [ ] [(if model.Counter = Some {Value = 69} then str "nice" else str "")]
               ]
-
         ]
