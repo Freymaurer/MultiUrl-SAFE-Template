@@ -90,6 +90,7 @@ let view = elmishView "Counter" <| fun { Model = model; Dispatch = dispatch } ->
                     [ Heading.h3 [] [ str ("Press buttons to manipulate counter: " + show model) ] ]
                 Columns.columns []
                     [ Column.column [] [ button "-" (fun _ -> dispatch Decrement) ]
-                      Column.column [] [ button "+" (fun _ -> dispatch Increment) ] ] ]
-
+                      Column.column [] [ button "+" (fun _ -> dispatch Increment) ] ]
+                strong [ ] [(if model.Counter = Some {Value = 69} then str "nice" else str "")]
+              ]
         ]

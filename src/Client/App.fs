@@ -5,92 +5,104 @@ open Elmish.UrlParser
 open Elmish.Navigation
 open Thoth.Json
 open Fable.Core.JsInterop
+open Fable.React
+open Fable.React.Props
+open Fulma
 
-module Pages =
+type Hero = string
 
-    type Page =
-        | Home
-        | Counter
-    
-    let toPage page =
-        match page with
-        | Home -> "#/home"
-        | Counter -> "#/counter"
-    
-    let pageParser : Parser<Page->_,_> =
-        oneOf [
-            map Home (s "/")
-            map Home (s "home")
-            map Counter (s "counter")
-        ]
+type Route =
+    | Home
+    | Counter
+    | Root
+    | Dashboard
+    | Detail of int
 
-open Pages
+let toRouteUrl route =
+    match route with
+    | Route.Root -> "/"
+    | Route.Home-> "/home"
+    | Route.Counter -> "/counter"
+    | Route.Dashboard -> "/dashboard"
+    | Route.Detail id -> "/detail/" + string id
+
 
 type PageModel =
 | HomeModel
 | CounterModel of Counter.Model
 
-type Msg =
-| HomeMsg
-| CounterMsg of Counter.Msg
-
 type Model = {
-    PageModel   : PageModel
-    Page        : Page
+    CurrentRoute : Route option
+    CurrentPageModel : PageModel
+    Debug : string option
+    NumberForDetail : int
 }
 
-let urlUpdate (result: Page option) (model:Model) =
-    match result with
+type Msg =
+    | Navigate of Route
+    | HomeMsg
+    | CounterMsg of Counter.Msg
+    | UpdateNumberForDetail of int
+
+module Routing =
+
+    open Elmish.UrlParser
+    open Elmish.Navigation
+
+    let private route =
+        oneOf [
+            map Route.Root (s "")
+            map Route.Counter (s "counter")
+            map Route.Home (s "home")
+            map Route.Dashboard (s "dashboard")
+            map (fun detailID -> Route.Detail detailID) (s "detail" </> i32)
+        ]
+
+    // Take a window.Location object and return an option of Route
+
+    let parsePath location = UrlParser.parsePath route location
+
+let urlUpdate (route: Route option) (model:Model) =
+    match route with
     | None ->
-        model, Navigation.modifyUrl (toPage Page.Home)
-    | Some Page.Home ->
+        model, Cmd.ofMsg (Navigate Route.Home)
+    | Some Route.Home ->
         { model with
-            PageModel = PageModel.HomeModel
-            Page = Home }, Cmd.none
-    | Some Page.Counter ->
+            CurrentPageModel = PageModel.HomeModel
+            CurrentRoute = route }, Cmd.none
+    | Some Route.Counter ->
         let m, cmd = Counter.init ()
         { model with
-            PageModel = PageModel.CounterModel m
-            Page = Counter}, Cmd.map CounterMsg cmd
+            CurrentPageModel = PageModel.CounterModel m
+            CurrentRoute = route }, Cmd.map CounterMsg cmd
+    | Some (Route.Detail id) ->
+            { model with
+                CurrentRoute = route
+                NumberForDetail = id
+                Debug = Some ( sprintf "you just connected to detail number %i" id )
+            }, Cmd.none
+    | _ ->
+        { model with CurrentRoute = route }, Cmd.none
 
-let hydrateModel (json:string) (page: Page option) : Model * Cmd<_> =
-    // The page was rendered server-side and now react client-side kicks in.
-    // If needed, the model could be fixed up here.
-    // In this case we just deserialize the model from the json and don't need to to anything special.
-    let model: Model = Decode.Auto.unsafeFromString(json)
-    match page, model.PageModel with
-    | Some Page.Home, HomeModel -> model, Cmd.none
-    | Some Page.Counter, CounterModel _ -> model, Cmd.none
-    | _, HomeModel |  _, CounterModel _ ->
-        // unknown page or page does not match model -> go to home page
-        { PageModel = HomeModel
-          Page  =   Home }, Cmd.none
+let init _ =
+    let model = {
+        CurrentRoute = None
+        CurrentPageModel = HomeModel
+        Debug = None
+        NumberForDetail = 0
+    }
+    let route = Routing.parsePath Browser.Dom.document.location
+    urlUpdate route model
 
-
-let init page =
-    // was the page rendered server-side?
-    let stateJson: string option = !!Browser.Dom.window?__INIT_MODEL__
-
-    match stateJson with
-    | Some json ->
-        // SSR -> hydrate the model
-        let model, cmd = hydrateModel json page
-        model, cmd
-    | None ->
-        // no SSR -> show home page
-        let model =
-            { PageModel = HomeModel
-              Page      = Home}
-
-        urlUpdate page model
-
-let update msg currentModel =
-    match msg, currentModel.PageModel with
+let update msg (currentModel:Model) =
+    match msg, currentModel.CurrentPageModel with
+    | Navigate route , _  ->
+        currentModel, Navigation.newUrl (toRouteUrl route)
     | HomeMsg, HomeModel ->
         let nextModel = {
             currentModel with
-                PageModel = HomeModel
-                Page = Home
+                CurrentPageModel = HomeModel
+                CurrentRoute = Some Home
             }
         nextModel, Cmd.none
     | CounterMsg msg, CounterModel m ->
@@ -98,16 +110,29 @@ let update msg currentModel =
             Counter.update msg m
         let nextModel = {
             currentModel with
-                PageModel = CounterModel m
-                Page = Counter
+                CurrentPageModel = CounterModel m
+                CurrentRoute = Some Counter
             }
         nextModel, Cmd.map CounterMsg cmd
+    | UpdateNumberForDetail (inputVal), _ ->
+        let nextModel = {
+            currentModel with
+                NumberForDetail = inputVal
+        }
+        nextModel,Cmd.none
     | _ -> currentModel,Cmd.none
 
-open Fable.React
-open Fable.React.Props
-open Fulma
 
+let heroHeadNavbar dispatch (model:Model)=
+    Hero.head [] [
+        Tabs.tabs [ Tabs.IsBoxed; Tabs.IsCentered ] [
+        a [Href "#"; OnClick (fun ev -> ev.preventDefault(); Msg.Navigate Route.Root |> dispatch)] [str "Root"]
+        a [Href "#"; OnClick (fun ev -> ev.preventDefault(); Msg.Navigate Route.Dashboard |> dispatch)] [str "Dashboard"]
+        a [Href "#"; OnClick (fun ev -> ev.preventDefault(); Msg.Navigate Route.Home |> dispatch)] [str "Home"]
+        a [Href "#"; OnClick (fun ev -> ev.preventDefault(); Msg.Navigate Route.Counter |> dispatch)] [str "Counter"]
+        a [Href "#"; OnClick (fun ev -> ev.preventDefault(); Msg.Navigate (Route.Detail model.NumberForDetail) |> dispatch)] [str (sprintf "Detail %i" model.NumberForDetail)]
+        ]
+    ]
 
 let safeComponents =
     let components =
@@ -125,7 +150,6 @@ let safeComponents =
              a [ Href "https://fulma.github.io/Fulma" ] [ str "Fulma" ]
              str ", "
              a [ Href "https://zaid-ajaj.github.io/Fable.Remoting/" ] [ str "Fable.Remoting" ]
-
            ]
 
     span [ ]
@@ -134,65 +158,45 @@ let safeComponents =
           str " powered by: "
           components ]
 
-let view model (dispatch: Msg -> unit) =
-    let pageHtml pageModel =
-        match pageModel with
-        | HomeModel -> str "you are viewing the HomeModel"
-        | CounterModel (_) -> str "you are viewing the CounterModel"
-    Hero.hero
-        [ Hero.IsHalfHeight
-        ]
-        [ Hero.head
-            [ ]
-            [ Tabs.tabs
-                [ Tabs.IsBoxed
-                  Tabs.IsCentered ]
-                [ Tabs.tab [ (if model.Page = Home then Tabs.Tab.IsActive true else Tabs.Tab.IsActive false) ]
-                    [ a [ Href "#/home" ] [ str "Home" ] ]
-                  Tabs.tab [ (if model.Page = Counter then Tabs.Tab.IsActive true else Tabs.Tab.IsActive false) ]
-                    [ a [ Href "#/counter" ] [ str "Counter" ] ]
-                ]
+let view (model:Model) (dispatch: Msg -> unit) =
+    Hero.hero [ Hero.IsHalfHeight ] [
+        (heroHeadNavbar dispatch model)
+        //str model.Debug.Value
+        Columns.columns [ Columns.IsCentered ][
+            Column.column [ Column.Width (Screen.All,Column.Is2) ] [
+              Input.number [ Input.Placeholder "Detail Number..."
+                             Input.OnChange (fun e -> let x = !!e.target?value
+                                                      dispatch (UpdateNumberForDetail x)
+                                            )
+                           ]
             ]
-          Hero.body [ ]
-            [ Container.container
-                [ Container.IsFluid
-                  Container.Modifiers [ Modifier.TextAlignment (Screen.All, TextAlignment.Centered) ] ]
-                [ Heading.h1 [ ]
-                    [ str "Test Application" ]
-                  Heading.h2 [ Heading.IsSubtitle ]
-                    [ str "using Elmish Navigation" ]
-                  Box.box'
-                    []
-                    [ Text.p
-                        [   Modifiers [ Modifier.TextSize (Screen.All,TextSize.Is4)
-                                        Modifier.TextColor IsDanger] ]
-                        [   pageHtml model.PageModel
-                        ]
-                    ]
-                  Box.box' [ ] [
-                      match model.PageModel with
-                      | HomeModel -> 
-                        yield Home.view ()
-                      | CounterModel m ->
-                        yield Counter.view { Model = m; Dispatch = (CounterMsg >> dispatch) }
-                      //| _ ->
-                      //    yield str "this does not exist yet"
-                  ]  
-                ]
-            ]
-          Hero.foot []
-            [ Content.content [ Content.Modifiers [ Modifier.TextAlignment (Screen.All, TextAlignment.Centered) ] ]
-                [ safeComponents ] ] 
         ]
+        Columns.columns [ Columns.IsCentered ] [
+            Column.column [ Column.Width (Screen.All,Column.IsHalf) ] [
+                Box.box' [ ] [
+                    match model.CurrentPageModel, model.CurrentRoute with
+                    | _, Some (Route.Detail id) ->
+                            yield str (sprintf "you just matched the Detail Route with id: %i" id)
+                    | HomeModel, Some (Dashboard) ->
+                            yield str "you just matched the Dashboard Route"
+                    | HomeModel, _ -> 
+                            yield Home.view ()
+                    | CounterModel m ,Some Route.Counter->
+                            yield Counter.view { Model = m; Dispatch = (CounterMsg >> dispatch) }
+                    | _ ->
+                            yield str "this does not exist yet"
+                ]  
+            ]
+        ]
+        Hero.foot [] [ Content.content [ Content.Modifiers [ Modifier.TextAlignment (Screen.All, TextAlignment.Centered) ] ]
+            [ safeComponents ]
+        ] 
+    ]
 
 
 open Elmish.React
 open Elmish.Debug
-
-let withReact =
-    if (!!Browser.Dom.window?__INIT_MODEL__)
-    then Program.withReactHydrate
-    else Program.withReactSynchronous
+open Elmish.Navigation
 
 
 #if DEBUG
@@ -201,12 +205,12 @@ open Elmish.HMR
 #endif
 
 Program.mkProgram init update view
-|> Program.toNavigable (parseHash pageParser) urlUpdate
-#if DEBUG
-|> Program.withConsoleTrace
-#endif
-|> withReact "elmish-app"
 #if DEBUG
 |> Program.withDebugger
 #endif
+#if DEBUG
+|> Program.withConsoleTrace
+#endif
+|> Program.toNavigable Routing.parsePath urlUpdate
+|> Program.withReactBatched "elmish-app"
 |> Program.run
