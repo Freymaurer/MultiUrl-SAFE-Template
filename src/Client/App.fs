@@ -24,7 +24,8 @@ let toRouteUrl route =
     | Route.Home-> "/home"
     | Route.Counter -> "/counter"
     | Route.Dashboard -> "/dashboard"
-    | Route.Detail id -> sprintf "/detail/%i" id
+    | Route.Detail id -> "/detail/" + string id
+
 
 type PageModel =
 | HomeModel
@@ -46,6 +47,7 @@ type Msg =
 module Routing =
 
     open Elmish.UrlParser
+    open Elmish.Navigation
 
     let private route =
         oneOf [
@@ -53,7 +55,7 @@ module Routing =
             map Route.Counter (s "counter")
             map Route.Home (s "home")
             map Route.Dashboard (s "dashboard")
-            map Route.Detail (s "detail" </> i32)
+            map (fun detailID -> Route.Detail detailID) (s "detail" </> i32)
         ]
 
     // Take a window.Location object and return an option of Route
@@ -73,13 +75,12 @@ let urlUpdate (route: Route option) (model:Model) =
         { model with
             CurrentPageModel = PageModel.CounterModel m
             CurrentRoute = route }, Cmd.map CounterMsg cmd
-    | Some (Route.Detail (id) )->
-        let nextModel = {
-            model with
-                Debug = Some (sprintf "You are now visiting page Detail: %i" id)
-                CurrentRoute = Some (Route.Detail id)
-        }
-        nextModel, Cmd.none
+    | Some (Route.Detail id) ->
+            { model with
+                CurrentRoute = route
+                NumberForDetail = id
+                Debug = Some ( sprintf "you just connected to detail number %i" id )
+            }, Cmd.none
     | _ ->
         { model with CurrentRoute = route }, Cmd.none
 
@@ -204,12 +205,12 @@ open Elmish.HMR
 #endif
 
 Program.mkProgram init update view
-|> Program.toNavigable Routing.parsePath urlUpdate
-#if DEBUG
-|> Program.withConsoleTrace
-#endif
-|> Program.withReactBatched "elmish-app"
 #if DEBUG
 |> Program.withDebugger
 #endif
+#if DEBUG
+|> Program.withConsoleTrace
+#endif
+|> Program.toNavigable Routing.parsePath urlUpdate
+|> Program.withReactBatched "elmish-app"
 |> Program.run
