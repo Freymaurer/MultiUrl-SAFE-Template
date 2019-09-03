@@ -2,7 +2,9 @@
 
 This template can be used to generate a full-stack web application using the [SAFE Stack](https://safe-stack.github.io/). It was created using the dotnet [SAFE Template](https://safe-stack.github.io/docs/template-overview/). If you want to learn more about the template why not start with the [quick start](https://safe-stack.github.io/docs/quickstart/) guide?
 
-Edit: I had to update package.json, otherwise the following function would give no output
+Problems during implementation into SAFE-stack:
+
+1: I had to update package.json, otherwise the following function would give no output
 
     let inline elmishView name render = FunctionComponent.Of(render, name, equalsButFunctions)
     
@@ -10,6 +12,16 @@ Changes to package.json:
 
     "react": "16.8",
     "react-dom": "16.8",
+    
+2: Without the following change to the webpack.config, it was not possible to directly connect to any url with variable input. Like
+for in this example the detail/int url path.
+
+    output: {
+         path: resolve(CONFIG.outputDir),
+         filename: isProduction ? '[name].[hash].js' : '[name].js',
+         publicPath: '/'
+         
+The last part about publicPath was missing in the SAFE-stack template.
 
 
 ## Install pre-requisites
